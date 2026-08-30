@@ -227,8 +227,18 @@ def amwg_table(adf):
                 continue
             #End if
 
-            #Load model variable data from file:
-            ds = utils.load_dataset(ts_files)
+            #Load model variable data from file.
+            #NOTE: use the AdfData loader rather than utils.load_dataset so that
+            #the time coordinate is re-assigned to the midpoint of time_bnds.
+            #CAM monthly means are stamped at the *end* of the averaging
+            #interval, so without this the January mean carries a February time
+            #stamp and the whole-year trim in `annual_mean` picks the wrong window.
+            ds = adf.data.load_timeseries_dataset(ts_files)
+            if ds is None:
+                wmsg = f"\t    WARNING: Unable to load time series for '{var}',"
+                wmsg += " so it will be skipped."
+                print(wmsg)
+                continue
             data = ds[var]
 
             #Extract units string, if available:
