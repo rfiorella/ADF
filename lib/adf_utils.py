@@ -317,8 +317,28 @@ def annual_mean(data, whole_years=False, time_name='time'):
     """
     assert time_name in data.coords, f"Did not find the expected time coordinate '{time_name}' in the data"
     if whole_years:
-        first_january = np.argwhere((data.time.dt.month == 1).values)[0].item()
-        last_december = np.argwhere((data.time.dt.month == 12).values)[-1].item()
+        # Guard first: an empty time axis cannot be handed to the `.dt` accessor,
+        # which raises an opaque TypeError on a zero-length object array.
+        if data[time_name].size == 0:
+            raise ValueError("annual_mean(whole_years=True) received data with an "
+                             "empty time coordinate, so no annual average is possible.")
+        januarys = np.argwhere((data[time_name].dt.month == 1).values)
+        decembers = np.argwhere((data[time_name].dt.month == 12).values)
+        if (len(januarys) == 0) or (len(decembers) == 0) or (januarys[0].item() > decembers[-1].item()):
+            # No complete January-to-December window is present, so the slice below
+            # would be empty.  Report the range we actually got: the usual cause is
+            # monthly data stamped at the end of the averaging interval, which puts
+            # a February time stamp on the January mean.
+            raise ValueError(
+                "annual_mean(whole_years=True) found no complete January-December "
+                f"period: data spans {data[time_name].values[0]} to "
+                f"{data[time_name].values[-1]} "
+                f"(months: {data[time_name].dt.month.values}). If these are CAM "
+                "monthly means, the time coordinate may need to be re-assigned "
+                "to the midpoint of time_bnds."
+            )
+        first_january = januarys[0].item()
+        last_december = decembers[-1].item()
         data_to_avg = data.isel(time=slice(first_january,last_december+1)) # PLUS 1 BECAUSE SLICE DOES NOT INCLUDE END POINT
     else:
         data_to_avg = data
