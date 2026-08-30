@@ -6,6 +6,11 @@ dependencies:
   - pyyaml=6.0.2
   - scipy=1.12.0
   - cartopy=0.23.0
+  # PROJ 9.8 returns inf when transforming a point at either pole between
+  # two CRSs, which breaks cartopy's tick formatting for the +/-90 latitude
+  # ticks used by the lat/lon maps (ValueError: cannot convert float NaN to
+  # integer) and its LambertConformal boundary.  PROJ <= 9.7 is unaffected.
+  - proj<9.8
   - netcdf4=1.6.5
   - xarray=2024.1.1
   - uxarray=2025.03.0
