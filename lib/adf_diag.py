@@ -104,6 +104,18 @@ from adf_derive import check_derive, derive_variable
 #################
 
 
+def call_ncrcat(cmd):
+    """Wrap subprocess.run so it can be used with the multiprocessing Pool
+    in `create_time_series`.
+
+    This must stay at module scope.  Under the "spawn" and "forkserver" start
+    methods the pool pickles the function by name, and the worker looks it up
+    in a freshly-imported `adf_diag`, so a function defined inside a method is
+    not resolvable in the child process.
+    """
+    return subprocess.run(cmd, shell=False)
+
+
 def construct_index_info(page_dict, fnam, opf):
     """
     Helper function for generating web pages.
@@ -401,17 +413,6 @@ class AdfDiag(AdfWeb):
         #Notify user that script has started:
         msg = "\n  Calculating CAM time series..."
         print(f"{msg}\n  {'-' * (len(msg)-3)}")
-
-        global call_ncrcat
-
-        def call_ncrcat(cmd):
-            """this is an internal function to `create_time_series`
-            It just wraps the subprocess.call() function, so it can be
-            used with the multiprocessing Pool that is constructed below.
-            It is declared as global to avoid AttributeError.
-            """
-            return subprocess.run(cmd, shell=False)
-        # End def
 
         # Gather the per-case configuration (shared with the GenTS back end):
         cfg = self.get_ts_case_config(baseline=baseline)
