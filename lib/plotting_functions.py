@@ -328,8 +328,11 @@ def make_polar_plot(wks, case_nickname,
         ax2.set_ylabel(kwargs["units"])
         ax4.set_ylabel(kwargs["units"])
     else:
-        ax2.set_ylabel(f"{d1.units}")
-        ax4.set_ylabel(f"{d1.units}")
+        # Not every variable carries a units attribute -- CAM writes none for the
+        # dimensionless AOD fields -- so fall back rather than raising.
+        units = d1.attrs.get('units', 'none')
+        ax2.set_ylabel(f"{units}")
+        ax4.set_ylabel(f"{units}")
 
     [a.set_extent(domain, ccrs.PlateCarree()) for a in [ax1, ax2, ax3, ax4]]
     [a.coastlines() for a in [ax1, ax2, ax3, ax4]]
