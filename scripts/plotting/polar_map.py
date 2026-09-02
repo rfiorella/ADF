@@ -45,7 +45,10 @@ def process_seasonal_data(mdata, odata, season):
     
     # Calculate differences
     dseason = mseason - oseason
-    dseason.attrs['units'] = mseason.attrs['units']
+    # Not every variable carries a units attribute -- CAM writes none for the
+    # dimensionless AOD fields (AODDUST, AODVIS) -- so fall back rather than
+    # KeyError, matching meridional_mean and global_latlon_vect_map.
+    dseason.attrs['units'] = mseason.attrs.get('units', 'none')
     
     # Calculate percent change
     pseason = (mseason - oseason) / np.abs(oseason) * 100.0
